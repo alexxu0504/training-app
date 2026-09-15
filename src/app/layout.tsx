@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import { RegisterSW } from "@/components/RegisterSW";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -16,6 +17,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Endurance — Training Command Center",
   description: "Personal triathlon and marathon training dashboard",
+  applicationName: "Endurance",
+  appleWebApp: {
+    capable: true,
+    title: "Endurance",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#09090b",
 };
 
 const NAV = [
@@ -58,6 +69,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-6 md:py-8">
           {children}
         </main>
+        <RegisterSW />
       </body>
     </html>
   );
