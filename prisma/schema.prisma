@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // Dev: sqlite (file:./dev.db). Prod: postgresql via Supabase — change provider
+  // to "postgresql" and point DATABASE_URL at the Supabase connection string.
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(cuid())
+  name             String
+  email            String?           @unique
+  createdAt        DateTime          @default(now())
+  connectedAccounts ConnectedAccount[]
+  activities       Activity[]
+  races            Race[]
+  personalRecords  PersonalRecord[]
+  weeklyMetrics    WeeklyMetric[]
+}
+
+// One row per connected provider per user (strava, garmin).
+model ConnectedAccount {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider       String   // "strava" | "garmin"
+  providerUserId String?
+  accessToken    String?
+  refreshToken   String?
+  expiresAt      Int?     // epoch seconds (Strava) / ms normalized to s
+  scope          String?
+  lastSyncAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId, provider])
+}
+
+model Activity {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source        String    // "strava" | "garmin" | "file"
+  externalId    String?   // provider's activity id
+  name          String
+  sport         String    // "swim" | "bike" | "run" | "other"
+  sportDetail   String?   // raw sport type e.g. "TrailRun", "VirtualRide"
+  startTime     DateTime
+  timezone      String?
+  durationSec   Int       // elapsed time
+  movingSec     Int?
+  distanceM     Float     @default(0)
+  elevGainM     Float?
+  avgHr         Int?
+  maxHr         Int?
+  avgSpeedMs    Float?
+  calories      Int?
+  hasGps        Boolean   @default(false)
+  polyline      String?   // Google-encoded polyline of the route
+  streamsJson   String?   // cached stream data (JSON string)
+  rawJson       String?   // original provider payload (JSON string)
+  duplicateOfId String?
+  duplicateOf   Activity? @relation("ActivityDuplicates", fields: [duplicateOfId], references: [id])
+  duplicates    Activity[] @relation("ActivityDuplicates")
+  splits        ActivitySplit[]
+  createdAt     DateTime  @default(now())
+
+  @@unique([source, externalId])
+  @@index([userId, startTime])
+  @@index([userId, sport, startTime])
+}
+
+model ActivitySplit {
+  id          String   @id @default(cuid())
+  activityId  String
+  activity    Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  index       Int
+  distanceM   Float
+  durationSec Int
+  movingSec   Int?
+  avgSpeedMs  Float?
+  avgHr       Int?
+  elevDiffM   Float?
+
+  @@index([activityId])
+}
+
+model Race {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  date      DateTime
+  distanceM Float    // marathon = 42195
+  raceType  String   // "marathon" | "half" | "olympic_tri" | ...
+  goalSec   Int?     // goal finish time, seconds
+  isPrimary Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model PersonalRecord {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   String   // e.g. "run_5k", "run_10k", "run_half", "run_marathon",
+                      // "run_longest", "bike_longest", "bike_fastest_20mi",
+                      // "swim_longest", "swim_100", "swim_1000", "swim_2000",
+                      // "week_run_mileage", "week_hours", "streak_days"
+  label      String
+  valueSec   Int?     // time-based PRs
+  valueM     Float?   // distance-based PRs
+  valueNum   Float?   // misc (streak days, weekly hours, pace)
+  activityId String?
+  achievedAt DateTime
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, category])
+}
+
+// Materialized per-week rollup — recomputed after every sync/import.
+model WeeklyMetric {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStart   DateTime // Monday 00:00 local
+  sport       String   // "run" | "swim" | "bike" | "all"
+  count       Int      @default(0)
+  distanceM   Float    @default(0)
+  durationSec Int      @default(0)
+  longestM    Float    @default(0)
+  avgHr       Float?
+  avgSpeedMs  Float?
+
+  @@unique([userId, weekStart, sport])
+  @@index([userId, sport, weekStart])
+}
