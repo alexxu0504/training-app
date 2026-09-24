@@ -88,6 +88,23 @@ export function GoalRaceCard({
           </div>
         </div>
       </div>
+
+      {daysToRace !== null && daysToRace > 0 && (
+        <div className="mt-6">
+          <div className="mb-1.5 flex justify-between text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+            <span>Final 16 weeks</span>
+            <span>{Math.min(100, Math.max(0, Math.round(((112 - daysToRace) / 112) * 100)))}%</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-zinc-800">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all"
+              style={{
+                width: `${Math.min(100, Math.max(0, ((112 - daysToRace) / 112) * 100))}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
     </Card>
   )
 }

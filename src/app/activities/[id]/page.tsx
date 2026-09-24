@@ -98,27 +98,40 @@ export default async function ActivityDetailPage({
                   <th className="pb-2 pr-4 font-medium text-right">Distance</th>
                   <th className="pb-2 pr-4 font-medium text-right">Time</th>
                   <th className="pb-2 pr-4 font-medium text-right">Pace/Speed</th>
+                  <th className="pb-2 pr-4 font-medium w-28"></th>
                   <th className="pb-2 pr-4 font-medium text-right">Avg HR</th>
                   <th className="pb-2 font-medium text-right">Elev Δ</th>
                 </tr>
               </thead>
               <tbody>
-                {a.splits.map((s) => (
-                  <tr key={s.id} className="border-b border-zinc-800/60 last:border-0">
-                    <td className="stat-num py-2 pr-4 text-zinc-400">{s.index + 1}</td>
-                    <td className="stat-num py-2 pr-4 text-right">
-                      {a.sport === 'swim'
-                        ? `${Math.round(s.distanceM)}`
-                        : (s.distanceM / 1609.344).toFixed(2)}
-                    </td>
-                    <td className="stat-num py-2 pr-4 text-right">{formatDuration(s.durationSec)}</td>
-                    <td className="stat-num py-2 pr-4 text-right">{splitPace(s.distanceM, s.durationSec)}</td>
-                    <td className="stat-num py-2 pr-4 text-right text-zinc-400">{s.avgHr ?? '—'}</td>
-                    <td className="stat-num py-2 text-right text-zinc-400">
-                      {s.elevDiffM != null ? `${Math.round(s.elevDiffM / 0.3048)} ft` : '—'}
-                    </td>
-                  </tr>
-                ))}
+                {a.splits.map((s) => {
+                  const speed = s.distanceM / s.durationSec
+                  const maxSpeed = Math.max(...a.splits.map((x) => x.distanceM / x.durationSec))
+                  return (
+                    <tr key={s.id} className="border-b border-zinc-800/60 last:border-0">
+                      <td className="stat-num py-2 pr-4 text-zinc-400">{s.index + 1}</td>
+                      <td className="stat-num py-2 pr-4 text-right">
+                        {a.sport === 'swim'
+                          ? `${Math.round(s.distanceM)}`
+                          : (s.distanceM / 1609.344).toFixed(2)}
+                      </td>
+                      <td className="stat-num py-2 pr-4 text-right">{formatDuration(s.durationSec)}</td>
+                      <td className="stat-num py-2 pr-4 text-right">{splitPace(s.distanceM, s.durationSec)}</td>
+                      <td className="py-2 pr-4">
+                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-zinc-800">
+                          <div
+                            className="h-full rounded-full bg-emerald-500/80"
+                            style={{ width: `${Math.max(8, (speed / maxSpeed) * 100)}%` }}
+                          />
+                        </div>
+                      </td>
+                      <td className="stat-num py-2 pr-4 text-right text-zinc-400">{s.avgHr ?? '—'}</td>
+                      <td className="stat-num py-2 text-right text-zinc-400">
+                        {s.elevDiffM != null ? `${Math.round(s.elevDiffM / 0.3048)} ft` : '—'}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

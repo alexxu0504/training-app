@@ -1,13 +1,16 @@
 import { prisma } from '@/lib/db'
 import { getCurrentUser } from '@/lib/user'
 import { getDashboardData } from '@/lib/metrics'
+import { buildRecommendations } from '@/lib/recommendations'
 import { GoalRaceCard } from '@/components/GoalRaceCard'
 import { ReadinessCard } from '@/components/ReadinessCard'
+import { RecommendationsCard } from '@/components/RecommendationsCard'
 import { SportCards } from '@/components/SportCards'
 import { MileageChart } from '@/components/MileageChart'
+import { StackedHoursChart } from '@/components/StackedHoursChart'
 import { TrainingCalendar, type DayActivity } from '@/components/TrainingCalendar'
 import { ActivityTable } from '@/components/ActivityTable'
-import { Card } from '@/components/ui'
+import { Card, SportDot } from '@/components/ui'
 import { formatDuration, formatMiles } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
@@ -22,6 +25,8 @@ function isoDay(d: Date) {
 export default async function Dashboard() {
   const user = await getCurrentUser()
   const data = await getDashboardData(user.id)
+
+  const recs = buildRecommendations(data, data.recentRuns)
 
   const recent = await prisma.activity.findMany({
     where: { userId: user.id, duplicateOfId: null },
@@ -53,11 +58,30 @@ export default async function Dashboard() {
         goalPaceSecPerMile={data.goalPaceSecPerMile}
       />
 
+      <RecommendationsCard recs={recs} />
+
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-5">
           <ReadinessCard data={data} />
           <Card title="This week by sport">
-            <SportCards swim={data.thisWeek.swim} bike={data.thisWeek.bike} run={data.thisWeek.run} />
+            <SportCards
+              swim={data.thisWeek.swim}
+              bike={data.thisWeek.bike}
+              run={data.thisWeek.run}
+              history={data.sportHistory}
+            />
+          </Card>
+          <Card
+            title="Training hours / week"
+            right={
+              <span className="flex items-center gap-3 text-[11px] text-zinc-500">
+                <span className="flex items-center gap-1"><SportDot sport="run" size={7} />Run</span>
+                <span className="flex items-center gap-1"><SportDot sport="bike" size={7} />Bike</span>
+                <span className="flex items-center gap-1"><SportDot sport="swim" size={7} />Swim</span>
+              </span>
+            }
+          >
+            <StackedHoursChart weeks={data.weeklyHours} />
           </Card>
           <Card
             title="Run mileage — last 16 weeks"

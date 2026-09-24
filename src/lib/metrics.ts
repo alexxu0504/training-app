@@ -166,6 +166,12 @@ export type DashboardData = {
     longestRunRecentM: number | null
   }
   weeklyRunHistory: { weekStart: Date; miles: number; longestM: number }[]
+  /** Last 8 weeks, miles per sport (for sparklines). */
+  sportHistory: Record<'swim' | 'bike' | 'run', number[]>
+  /** Last 12 weeks, training hours per sport (for stacked chart). */
+  weeklyHours: { weekStart: Date; swim: number; bike: number; run: number; other: number }[]
+  /** Runs from the last 28 days (used by recommendations). */
+  recentRuns: Activity[]
   insights: string[]
 }
 
@@ -276,6 +282,26 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     })
   }
 
+  // ---- Per-sport series for charts ----
+  const sportHistory = { swim: [] as number[], bike: [] as number[], run: [] as number[] }
+  for (let i = 7; i >= 0; i--) {
+    const ws = addDays(thisWeekStart, -7 * i)
+    for (const s of ['swim', 'bike', 'run'] as const) {
+      sportHistory[s].push(metersToMiles(metricAt(ws, s)?.distanceM ?? 0))
+    }
+  }
+  const weeklyHours: DashboardData['weeklyHours'] = []
+  for (let i = 11; i >= 0; i--) {
+    const ws = addDays(thisWeekStart, -7 * i)
+    weeklyHours.push({
+      weekStart: ws,
+      swim: (metricAt(ws, 'swim')?.durationSec ?? 0) / 3600,
+      bike: (metricAt(ws, 'bike')?.durationSec ?? 0) / 3600,
+      run: (metricAt(ws, 'run')?.durationSec ?? 0) / 3600,
+      other: (metricAt(ws, 'other')?.durationSec ?? 0) / 3600,
+    })
+  }
+
   // ---- Race / goal ----
   let daysToRace: number | null = null
   let weeksToRace: number | null = null
@@ -344,6 +370,9 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
       longestRunRecentM,
     },
     weeklyRunHistory,
+    sportHistory,
+    weeklyHours,
+    recentRuns: last28,
     insights,
   }
 }
