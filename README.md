@@ -93,9 +93,9 @@ elevation, plus source priority (Garmin > file import > Strava).
 4. On Vercel, set env vars: `DATABASE_URL`, `STRAVA_CLIENT_ID`,
    `STRAVA_CLIENT_SECRET`, `NEXT_PUBLIC_APP_URL` (e.g.
    `https://your-app.vercel.app` — used for the Strava OAuth redirect), and
-   `TZ` (e.g. `America/New_York`). `TZ` matters: weekly/daily bucketing uses
-   server-local time, and Vercel defaults to UTC — without it, a Sunday-evening
-   workout lands on Monday.
+   optionally `APP_TIMEZONE` (default `America/New_York`). Timezone matters:
+   weekly/daily bucketing uses server-local time and Vercel defaults to UTC —
+   the app sets TZ from APP_TIMEZONE at boot so a Sunday-evening run stays on Sunday.
 5. In the Strava API app settings, change **Authorization Callback Domain**
    to the Vercel domain (e.g. `your-app.vercel.app`).
 6. Deploy. `postinstall` runs `prisma generate` on every build.
