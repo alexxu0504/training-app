@@ -3,9 +3,9 @@ generator client {
 }
 
 datasource db {
-  // Dev: sqlite (file:./dev.db). Prod: postgresql via Supabase — change provider
-  // to "postgresql" and point DATABASE_URL at the Supabase connection string.
-  provider = "sqlite"
+  // Postgres (Supabase). DATABASE_URL should point at the Supabase pooler
+  // connection string.
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

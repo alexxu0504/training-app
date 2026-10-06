@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getCurrentUser } from '@/lib/user'
 import { exchangeCode } from '@/lib/strava'
+import { appOrigin } from '@/lib/url'
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url)
+  const origin = appOrigin(request)
   const code = url.searchParams.get('code')
   const error = url.searchParams.get('error')
   if (error || !code) {
-    return NextResponse.redirect(new URL('/import?error=strava_denied', url.origin))
+    return NextResponse.redirect(new URL('/import?error=strava_denied', origin))
   }
 
   try {
@@ -32,8 +34,8 @@ export async function GET(request: NextRequest) {
         scope: url.searchParams.get('scope'),
       },
     })
-    return NextResponse.redirect(new URL('/import?connected=strava', url.origin))
+    return NextResponse.redirect(new URL('/import?connected=strava', origin))
   } catch {
-    return NextResponse.redirect(new URL('/import?error=strava_exchange', url.origin))
+    return NextResponse.redirect(new URL('/import?error=strava_exchange', origin))
   }
 }

@@ -7,7 +7,7 @@ Combines Strava and Garmin data into one dashboard built around your goal race
 ## Stack
 
 - **Next.js 16** (App Router, Turbopack) + **TypeScript** + **Tailwind CSS 4**
-- **Prisma 6** ORM — SQLite for local dev, Postgres-compatible schema for Supabase
+- **Prisma 6** ORM — Postgres (Supabase) schema
 - Server actions for mutations; route handlers for OAuth and imports
 - No chart/map dependencies — SVG-based mileage chart and route map
 
@@ -80,10 +80,22 @@ elevation, plus source priority (Garmin > file import > Strava).
 | `PersonalRecord` | Computed PRs (run distances, longest efforts, swim paces, weekly records, streaks) |
 | `WeeklyMetric` | Materialized per-week rollup per sport + `all`, rebuilt on each sync |
 
-**Switching to Supabase/Postgres:** set `provider = "postgresql"` in
-`prisma/schema.prisma`, point `DATABASE_URL` at the Supabase connection string,
-and run `npx prisma migrate dev`. The schema avoids SQLite/Postgres incompatibilities
+**Deploying to Vercel + Supabase/Postgres:** the schema is already on
+`provider = "postgresql"`. The schema avoids SQLite/Postgres incompatibilities
 (no enums, no `Json` columns — JSON payloads are stored as strings).
+
+1. Create a Supabase project and copy the pooler connection string.
+2. Locally, set `DATABASE_URL` in `.env` to that string, then create the tables:
+   `npm run db:push`
+3. Copy existing dev data over (optional):
+   `DATABASE_URL=<postgres> npm run migrate:data prisma/dev.db`
+   (dry-run first with `--dry-run` to sanity-check row counts)
+4. On Vercel, set env vars: `DATABASE_URL`, `STRAVA_CLIENT_ID`,
+   `STRAVA_CLIENT_SECRET`, and `NEXT_PUBLIC_APP_URL` (e.g.
+   `https://your-app.vercel.app` — used for the Strava OAuth redirect).
+5. In the Strava API app settings, change **Authorization Callback Domain**
+   to the Vercel domain (e.g. `your-app.vercel.app`).
+6. Deploy. `postinstall` runs `prisma generate` on every build.
 
 ## Metrics & insights
 
