@@ -57,7 +57,21 @@ export function richnessScore(a: {
 export async function linkDuplicatesForUser(userId: string) {
   const activities = await prisma.activity.findMany({
     where: { userId },
-    include: { splits: { select: { id: true } } },
+    select: {
+      id: true,
+      sport: true,
+      startTime: true,
+      distanceM: true,
+      durationSec: true,
+      source: true,
+      hasGps: true,
+      avgHr: true,
+      maxHr: true,
+      elevGainM: true,
+      movingSec: true,
+      duplicateOfId: true,
+      splits: { select: { id: true } },
+    },
     orderBy: { startTime: 'asc' },
   })
 

@@ -2,6 +2,8 @@ import { metersToMiles, M_PER_MI, formatPaceSecPerMile } from './format'
 import type { DashboardData } from './metrics'
 import type { Activity } from '@prisma/client'
 
+type RunFields = Pick<Activity, 'startTime' | 'avgSpeedMs' | 'avgHr'>
+
 export type Recommendation = {
   title: string
   detail: string
@@ -13,7 +15,7 @@ export type Recommendation = {
  * computed metrics — nothing is invented, and no performance claims
  * are made beyond what the data shows.
  */
-export function buildRecommendations(data: DashboardData, runs: Activity[]): Recommendation[] {
+export function buildRecommendations(data: DashboardData, runs: RunFields[]): Recommendation[] {
   const recs: Recommendation[] = []
   const r = data.run
   const { daysToRace, weeksToRace, goalPaceSecPerMile } = data
@@ -134,7 +136,7 @@ export function buildRecommendations(data: DashboardData, runs: Activity[]): Rec
       a.avgHr
   )
   if (recent.length >= 3 && prior.length >= 3) {
-    const avg = (xs: Activity[], f: (a: Activity) => number) =>
+    const avg = (xs: RunFields[], f: (a: RunFields) => number) =>
       xs.reduce((s, a) => s + f(a), 0) / xs.length
     const paceNow = avg(recent, (a) => M_PER_MI / (a.avgSpeedMs ?? 1))
     const pacePrev = avg(prior, (a) => M_PER_MI / (a.avgSpeedMs ?? 1))

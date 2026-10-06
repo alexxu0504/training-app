@@ -24,22 +24,24 @@ function isoDay(d: Date) {
 
 export default async function Dashboard() {
   const user = await getCurrentUser()
-  const data = await getDashboardData(user.id)
-
-  const recs = buildRecommendations(data, data.recentRuns)
-
-  const recent = await prisma.activity.findMany({
-    where: { userId: user.id, duplicateOfId: null },
-    orderBy: { startTime: 'desc' },
-    take: 8,
-  })
 
   // Calendar: activities in the visible month.
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-  const monthActs = await prisma.activity.findMany({
-    where: { userId: user.id, duplicateOfId: null, startTime: { gte: monthStart } },
-    select: { startTime: true, sport: true },
-  })
+  const [data, recent, monthActs] = await Promise.all([
+    getDashboardData(user.id),
+    prisma.activity.findMany({
+      where: { userId: user.id, duplicateOfId: null },
+      orderBy: { startTime: 'desc' },
+      take: 8,
+      omit: { rawJson: true, streamsJson: true, polyline: true },
+    }),
+    prisma.activity.findMany({
+      where: { userId: user.id, duplicateOfId: null, startTime: { gte: monthStart } },
+      select: { startTime: true, sport: true },
+    }),
+  ])
+
+  const recs = buildRecommendations(data, data.recentRuns)
   const calDays: Record<string, DayActivity> = {}
   for (const a of monthActs) {
     const key = isoDay(a.startTime)

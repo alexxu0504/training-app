@@ -3,6 +3,10 @@ import { isLongRun, type Sport } from './sports'
 import { metersToMiles, M_PER_MI, pctChange } from './format'
 import type { Activity, Race } from '@prisma/client'
 
+/** Activity without the heavy payload columns (rawJson/streamsJson/polyline). */
+export type ActivityLean = Omit<Activity, 'rawJson' | 'streamsJson' | 'polyline'>
+const ACTIVITY_OMIT = { rawJson: true, streamsJson: true, polyline: true } as const
+
 export function startOfWeekMonday(d: Date): Date {
   const x = new Date(d)
   x.setHours(0, 0, 0, 0)
@@ -171,7 +175,7 @@ export type DashboardData = {
   /** Last 12 weeks, training hours per sport (for stacked chart). */
   weeklyHours: { weekStart: Date; swim: number; bike: number; run: number; other: number }[]
   /** Runs from the last 28 days (used by recommendations). */
-  recentRuns: Activity[]
+  recentRuns: ActivityLean[]
   insights: string[]
 }
 
@@ -186,6 +190,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     prisma.activity.findMany({
       where: { userId, duplicateOfId: null },
       orderBy: { startTime: 'desc' },
+      omit: ACTIVITY_OMIT,
     }),
   ])
 
@@ -214,7 +219,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
   const last28 = runs.filter((a) => a.startTime >= since(28))
   const prior28 = runs.filter((a) => a.startTime >= since(56) && a.startTime < since(28))
 
-  const sumM = (xs: Activity[]) => xs.reduce((s, a) => s + a.distanceM, 0)
+  const sumM = (xs: ActivityLean[]) => xs.reduce((s, a) => s + a.distanceM, 0)
   const fourWeekAvgMiles = metersToMiles(sumM(last28)) / 4
   const priorFourWeekAvgMiles = metersToMiles(sumM(prior28)) / 4
 

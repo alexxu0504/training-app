@@ -26,6 +26,7 @@ export default async function DayPage({
           startTime: { gte: day, lt: next },
         },
         orderBy: { startTime: 'asc' },
+        omit: { rawJson: true, streamsJson: true, polyline: true },
       })
 
   return (

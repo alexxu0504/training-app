@@ -11,6 +11,7 @@ export default async function ActivitiesPage() {
     where: { userId: user.id },
     orderBy: { startTime: 'desc' },
     take: 200,
+    omit: { rawJson: true, streamsJson: true, polyline: true },
   })
 
   return (

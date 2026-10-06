@@ -11,14 +11,17 @@ import {
 } from '@/lib/format'
 import type { Activity } from '@prisma/client'
 
-function metricFor(a: Activity) {
+/** Activity row without the heavy payload columns. */
+export type ActivityRow = Omit<Activity, 'rawJson' | 'streamsJson' | 'polyline'>
+
+function metricFor(a: ActivityRow) {
   if (a.sport === 'bike') return formatSpeedMph(a.avgSpeedMs)
   if (a.sport === 'swim')
     return a.avgSpeedMs ? formatSwimPace(100 / a.avgSpeedMs) : '—'
   return formatPaceSecPerMile(paceSecPerMileFromSpeed(a.avgSpeedMs))
 }
 
-export function ActivityTable({ activities }: { activities: Activity[] }) {
+export function ActivityTable({ activities }: { activities: ActivityRow[] }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
